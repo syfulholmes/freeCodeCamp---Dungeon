@@ -1,0 +1,499 @@
+//abstract representation of gamestate
+//initialize empty map
+var abstractEmptyMap = [];
+var pixels = 180;
+for (var i = 0; i < pixels; i++){
+  var row = [];
+  for (var j = 0; j < pixels; j++){
+    row.push(0);
+  }
+  abstractEmptyMap.push(row);
+}
+
+//build first map
+function buildMap1(){
+  var emptyMap = abstractEmptyMap.slice(0);
+  var monsterList = []; //store monster Name, LV, HP, ATK, coords
+  
+  //add room with dimensions m x n pixels where the left corner is at coordinates (x,y)
+  //additional args is to add weapon or monster
+  //weapon & monster supposed to be boolean
+  //mons_details is an array of [name, lvl, hp, atk]
+  function addRoom(m, n, x, y, weapon, monster, monster_details){
+    var weapX;
+    var weapY;
+    
+    //randomly generate coordinates of thing
+    if (weapon || monster){
+      weapX = x + Math.floor(Math.random()*m/6);
+      weapY = y + Math.floor(Math.random()*n/6);
+    }
+    
+    for (var i = y; i < y + n; i++){
+      for (var j = x; j < x + m; j++){
+        emptyMap[i][j] = 1;
+        
+        //add health pack randomly
+        var hp_rand = Math.random();
+        if (hp_rand < 0.004){emptyMap[i][j] = 2;}
+        
+        //add weapon or monster
+        if (weapX == j && weapY == i){
+          
+          if (weapon) { emptyMap[i][j] = 3; } //add weapon
+          
+          else if (monster) { 
+            var mons = monster_details;
+            mons.push([weapX, weapY]); //add monster coordinates
+            
+            monsterList.push(mons) //add monster to monsterList
+          }
+        }      
+      }
+    }
+  }
+  
+  //[name, lvl, hp, atk]
+  var toyol = ['Toyol', 1, 50, 10];
+  var toyol2 = ['Toyol', 1, 50, 10];
+  var toyolX = ['ToyolX', 2, 50, 30];
+  
+  var pochong = ['Pochong', 2, 70, 20];
+  var pochongX = ['PochongX', 4, 100, 60];
+  var pochongX2 = ['PochongX', 4, 100, 60];
+  
+  var penanggal = ['Penanggal', 3, 90, 50];
+  var penanggalX = ['PenanggalX', 5, 180, 120];
+  
+  var pontianak = ['Pontianak', 6, 250, 150];
+  var pontianak2 = ['Pontianak', 6, 250, 150];
+  var mPontianak = ['Mother of Pontianak', 7, 300, 200];
+  
+  var theDarkLord = ['The Dark Lord', 8, 400, 250];
+  
+  //first chamber
+  addRoom(10, 20, 9, 9);
+  addRoom(17, 5, 19, 27, false, true, toyol);
+  
+  //branch 1
+  addRoom(3, 50, 36, 19, true);
+  addRoom(30, 30, 21, 69, false, true, pochong);
+
+  //second chamber
+  addRoom(40, 5, 39, 19, true);
+  addRoom(50, 50, 79, 14, false, true, toyol2);
+  addRoom(35, 6, 129, 39);
+  addRoom(5, 30, 160, 15, false, true, toyolX);
+  
+  //right long alley
+  addRoom(3, 50, 149, 45, false, true, penanggal);
+  
+  //right branch
+  addRoom(10, 3, 152, 75, false, true, pochongX);
+  addRoom(10, 10, 162, 68, true);
+  
+  addRoom(30, 5, 122, 95, false, true, penanggalX);
+  addRoom(35, 35, 87, 80);
+  addRoom(50, 5, 57, 80, false, true, pochongX2);
+  addRoom(10, 60, 57, 80, true);
+  
+  addRoom(90, 6, 27, 140, false, true, pontianak);
+  addRoom(17, 40, 10, 110, true);
+  
+  addRoom(5, 25, 33, 140, false, true, pontianak2);
+  addRoom(30, 10, 23, 160);
+  
+  addRoom(5, 25, 93, 140, true);
+  addRoom(40, 4, 93, 165, false, true, mPontianak);
+  
+  addRoom(30, 50, 133, 119, false, true, theDarkLord);
+  
+  //add monsters only here to prevent overwrite
+  for (var i = 0; i < monsterList.length; i++){
+    var coords = monsterList[i][4];
+    var x = coords[0];
+    var y = coords[1];
+    emptyMap[y][x] = 5;
+  }
+  
+  return [emptyMap, monsterList];
+}
+
+//converts abstract rep into graphics
+class Display extends React.Component {
+  render(){
+    var currState = this.props.state;
+    var n = currState.length;
+    
+    //init size was 20
+    var size = 15;
+    
+    function colorMap(n){
+      var out = '';
+      switch (n) {
+        case 0:
+          return 'black'; //null zone
+        case 1:
+          return 'white'; //empty space
+        case 2:
+          return 'green'; //health pack
+        case 3:
+          return 'purple'; //weapon
+        case 4:
+          return 'yellow'; //self
+        case 5:
+          return 'red'; //monster
+        case 6:
+          return 'pink'; //boss
+      }
+    }
+    
+    //positioning and color
+    function styleFunction(i, j, count, colorIndex){
+      var out = {
+        position: 'relative',
+        margin: 'auto',
+        top: -(count-1-i)*size,
+        left: (j-(n-1)/2)*size,
+        height: size,
+        width: size,
+        backgroundColor: colorMap(colorIndex)
+      };
+      return out;
+    }
+    
+    var out = [];
+    
+    var count = 0;
+    for (var i = 0; i < n; i++){
+      var row = [];
+      for (var j = 0; j < n; j++){
+        count++;
+        var colorIndex = currState[i][j];
+        out.push(<div style={styleFunction(i, j, count, colorIndex)} ></div>)
+      }
+    }
+    return (<div id='display'>
+        {out}
+      </div>);
+  }
+}
+
+//generate subset of map centered at coords, erases player if dead
+function subsetMap(coords, map, dead){
+  var out = [];
+  var x = coords[0];
+  var y = coords[1];
+  var xstart = x - 9;
+  var ystart = y - 9;
+  
+  for (var i = ystart; i < ystart + 19; i++){
+    var newRow = [];
+    for (var j = xstart; j < xstart + 19; j++){
+      newRow.push(map[i][j]);
+    }
+    out.push(newRow);
+  }
+  out[9][9] = 4
+  if (dead) {out[9][9] = 1;}
+  return out;
+}
+
+//generate abstract rep of full map
+var fullInfo = buildMap1();
+var fullMap = fullInfo[0];
+var allMonsters = fullInfo[1];
+
+//gamestate dynamics is here
+class FullPage extends React.Component {
+  constructor(props){
+    super(props);
+    this.state = {
+      position: [13, 13],
+      gameState: subsetMap([13, 13], fullMap),
+      weaponArr: [['Broom', 20], ['Pan', 30], ['Knife', 50], ['Sword', 80], ['Chainsaw', 120], ['Sembilu', 160], ['Keris', 200]],
+      weapon: 0, //weaponIndex
+      level: 1,
+      hp: 100,
+      exp: 0,
+      monsterArr: allMonsters,
+      battle: false,
+      monster: -1,
+      gameOver: false,
+      kills: 0,
+      target_kills: allMonsters.length,
+      boss_killed: false,
+      boss_mode: false
+    }
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
+  
+  //all dynamics is here
+  handleKeyDown(e){
+    //game stops evolving if gameOver
+    if (!this.state.gameOver){
+      var i = e.keyCode;
+      var currPos = this.state.position;
+    }
+    
+    //current player coordinates
+    var currX = currPos[0];
+    var currY = currPos[1];
+    
+    if (i == 37){
+      currX--;
+    } else if (i == 38){
+      currY--;
+    } else if (i == 39){
+      currX++;
+    } else if (i == 40){
+      currY++;
+    }
+    
+    //potential new position
+    var newPos = [currX, currY];
+    
+    //item in new position
+    var thing = fullMap[currY][currX];
+    
+    //state handle
+    var currState = this.state;
+    
+    //Empty cell or Health Pack or Weapon
+    if (thing == 1 || thing == 2 || thing == 3){
+      
+      //reset to false if move away from monster
+      if (currState.battle) { currState.battle = false; }
+      
+      //Handle Health Pack
+      if (thing == 2){
+        var a = Math.random();
+        var hpadd = 0;
+        
+        //adds random value to health
+        if (a < 0.2){ hpadd = 30; }
+        else if (a < 0.7){ hpadd = 50; }
+        else { hpadd = 100; }
+        
+        currState.hp += hpadd; //add health
+        fullMap[currY][currX] = 1; //erase health pack
+        
+        //Handle weapon
+      } else if (thing == 3){
+        currState.weapon++; //upgrade weapon   
+        fullMap[currY][currX] = 1; //erase weapon
+        
+      }
+      
+      //Move to new position (after updating health or weapon)
+      var newSubsetMap = subsetMap(newPos, fullMap);
+      currState.position = newPos;
+      currState.gameState = newSubsetMap; 
+      this.setState(currState);
+      
+      //Handle monster
+    } else if (thing == 5 || thing == 6) {
+      
+      //handle boss mode
+      var boss_mode = this.state.boss_mode;
+      
+      //Retrieve array of monsters
+      var monsterArr = currState.monsterArr;
+      
+      //Store monster index for easy identification
+      var monsterIndex;
+
+      //Identify monster by coordinates and retrieve index
+      for (var i = 0; i < monsterArr.length; i++){
+        var monsCoords = monsterArr[i][4];
+        var monsX = monsCoords[0];
+        var monsY = monsCoords[1];
+        if (currX == monsX && currY == monsY){monsterIndex = i; break;}
+      }
+      
+      if (boss_mode){ monsterIndex = monsterArr.length-1; }
+
+      //current monster & details
+      var monster = monsterArr[monsterIndex];
+      var monsterName = monster[0];
+      var monsterLv = monster[1];
+      var monsterHp = monster[2];
+      var monsterAtk = monster[3];
+      
+      //if monster or boss is dead
+      if (monsterHp <= 0){
+        fullMap[currY][currX] = 1; //erase monster
+        
+        //Update kill count
+        currState.kills++;
+
+        //If all monsters are dead
+        if (currState.kills == currState.target_kills && !boss_mode){
+          
+          //function to generate boss at random location other than current
+          var monsArr = currState.monsterArr;
+          var locationIndex = monsterIndex;
+          while (locationIndex == monsterIndex){
+            locationIndex = Math.floor(Math.random()*monsArr.length);
+          } 
+          var location = monsArr[locationIndex][4];
+          var x = location[0];
+          var y = location[1];
+          
+          //add boss to map at the location
+          fullMap[y][x] = 6; 
+          
+          //add boss info to state
+          var boss = ["Mother D-Reaper", 9, 500, 350, [x, y]];
+          monsArr.push(boss);
+          
+          //update state
+          currState.monsterArr = monsArr;
+          currState.boss_mode = true;
+        }
+        
+        //Move to new position and update EXP and Level
+        var newSubsetMap = subsetMap(newPos, fullMap);
+        currState.position = newPos;
+        currState.gameState = newSubsetMap; 
+        currState.exp += monsterLv*80
+        
+        //Battle over
+        currState.battle = false;
+        
+        //Level xp criteria
+        var levels = [50, 100, 150, 200, 250, 350, 500, 700, 900];
+        
+        var currlvl = currState.level;
+        var nxtlvlExp = levels[currlvl-1];
+        
+        //if meet exp requirements, level up
+        if (currState.exp >= nxtlvlExp){
+          currState.exp = currState.exp - nxtlvlExp;
+          currState.level++;
+        }
+        
+        //win game if boss hp drops to zero
+        if (boss_mode){ 
+          currState.boss_killed = true;
+          currState.gameOver = true;
+        }
+        
+        this.setState(currState);
+        
+        //if monster is alive
+      } else {
+        
+        //player fight info
+        var weaponIndex = currState.weapon;
+        var playerAtk = currState.weaponArr[weaponIndex][1];
+        var playerHp = currState.hp;
+        var playerLv = currState.level;
+        
+        //confidence multiplier based on level
+        if (playerLv > monsterLv){ playerAtk = playerAtk*1.4; }
+        else if (monsterLv > playerLv){ monsterAtk = monsterAtk*1.4; }
+        
+        //Min damage
+        var playerMin = Math.floor(playerAtk*0.7);
+        var monsterMin = Math.floor(monsterAtk*0.7);
+        
+        //actual damage per side
+        var playerDmg = Math.floor(Math.random()*playerAtk*0.3) + 1 + playerMin;
+        var monsterDmg = Math.floor(Math.random()*monsterAtk*0.3) + 1 + monsterMin;
+        
+        var playerHp = playerHp - monsterDmg;
+        var monsterHp = monsterHp - playerDmg;
+
+        //player dies
+        if (playerHp < 0){
+          playerHp = 0; 
+          currState.gameOver = true;
+          
+          //make player disappear
+          currState.gameState = subsetMap(currState.position, fullMap, true);
+          
+          //monster dies
+        } else if (monsterHp < 0){
+          monsterHp = 0; 
+        }
+        
+        //update monster HP
+        monster[2] = monsterHp;
+        monsterArr[monsterIndex] = monster;
+        currState.monsterArr = monsterArr;
+        
+        //update player HP
+        currState.hp = playerHp;
+        currState.battle = true;
+        currState.monster = monsterIndex;
+        
+        //update state
+        this.setState(currState);
+      }
+    }
+  }
+  
+  componentWillMount(){
+    window.addEventListener('keydown', this.handleKeyDown);
+  }
+  
+  render(){
+    //Retrive weapon
+    var weaponIndex = this.state.weapon;
+    var weapon = this.state.weaponArr[weaponIndex];
+    
+    var info = (<div>
+        <div id='hp'>
+          <h5>Level: {this.state.level}</h5>
+          <h5>HP: {this.state.hp}</h5>
+          <h5>EXP: {this.state.exp}</h5>
+        </div>
+        <div id='weapon'>
+          <h5>Weapon: {weapon[0]} </h5>
+          <h5>ATK: {weapon[1]}</h5>
+          <h5>Kills: {this.state.kills}/{this.state.target_kills} </h5>
+        </div>
+      </div>);
+    var enemyInfo;
+    
+    //if game has ended
+    if (this.state.gameOver){
+      info = <div id='lvl' className="gg"><h2>Game Over</h2></div>
+    }
+    
+    //if fighting battle (monster or boss)
+    if (this.state.battle && !this.state.gameOver){
+      var monsterArr = this.state.monsterArr;
+      var monster = monsterArr[this.state.monster];
+      
+      enemyInfo = <div>
+          <div id='enemy'>
+            <h5>Enemy: Level {monster[1]} {monster[0]} &nbsp; &nbsp; HP: {monster[2]} &nbsp; &nbsp; ATK: {monster[3]} </h5>
+          </div>
+        </div>
+     
+    //if boss mode and still alive    
+    } else if (this.state.boss_mode && !this.state.gameOver) {
+      enemyInfo = (<div id='boss'>
+          <h3>Find and Kill the Boss!!!</h3>
+        </div>);
+    }
+    
+    var stuff = [info, enemyInfo];
+    
+    if (this.state.boss_killed && this.state.gameOver) {
+      stuff = (<div id='win'>
+          <h1>You Won!!!</h1>
+        </div>);
+    }
+    
+    return (<div>
+        <div id='header'><h1>Dungeons & Demons</h1></div>
+        <Display state={this.state.gameState} />
+        {stuff}
+      </div>);
+  }
+}
+
+ReactDOM.render(<FullPage />, document.getElementById('app'));

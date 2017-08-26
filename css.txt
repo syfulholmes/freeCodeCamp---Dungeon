@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css?family=Creepster');
+
+html {
+  height: 100%;
+}
+
+#header {
+  position: relative;
+  top: 20px;
+  font-family: 'Creepster';
+  color: white;
+}
+
+body {
+  text-align: center;
+  background-color: #000033;
+  min-height: 100vh;
+}
+
+#display {
+  position: relative;
+  height: 300px;
+  top: 30px;
+}
+
+#hp {
+  position: relative;
+  margin: auto;
+  top: 28px;
+  left: -100px;
+  width: 200px;
+  color: white;
+}
+
+#weapon {
+  position: relative;
+  margin: auto;
+  top: -61px;
+  left: 100px;
+  width: 200px;
+  color: white;
+}
+
+#lvl {
+  position: relative;
+  top: 25px;
+}
+
+.gg {
+  color: red;
+}
+
+#enemy {
+  position: absolute;
+  bottom: 60px;
+  left: 500px;
+  color: red;
+}
+
+#win {
+  position: relative;
+  top: 25px;
+  color: red;
+}
+
+#boss {
+  position: absolute;
+  bottom: 50px;
+  left: 535px;
+  color: red;
+}
